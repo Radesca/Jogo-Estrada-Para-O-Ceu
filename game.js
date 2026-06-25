@@ -83,7 +83,7 @@ function startGame(ev){if(ev){ev.preventDefault();ev.stopPropagation();}reset();
 });
 
 // ---- controls (Dino) ----
-function jump(){if(!running||gameOver)return;if(player.onGround){player.vy=-17*scale;player.onGround=false;player.state='jump';}}
+function jump(){if(!running||gameOver)return;if(player.onGround){player.vy=-20*scale;player.onGround=false;player.state='jump';}}
 function duck(on){if(!running||gameOver)return;player.duckHeld=on;}
 window.addEventListener('keydown',e=>{
   if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();if(!running){startGame(e);}else jump();}
@@ -332,5 +332,21 @@ function draw(){
   drawCarlo();
   drawHUD();
 }
-function loop(){if(running&&!gameOver)update();draw();requestAnimationFrame(loop);}
-loop();
+// ===== LOOP COM PASSO FIXO (60 updates/seg) — independente da taxa do monitor =====
+let _lastTime=0, _acc=0;
+const STEP=1000/60;            // 1 update a cada 16.67ms (60fps logico)
+function loop(now){
+  if(!_lastTime)_lastTime=now||0;
+  let frame=(now||0)-_lastTime;
+  _lastTime=now||0;
+  if(frame>250)frame=250;      // evita salto gigante se a aba ficou em segundo plano
+  _acc+=frame;
+  // roda a logica em passos fixos, quantas vezes forem necessarias
+  while(_acc>=STEP){
+    if(running&&!gameOver)update();
+    _acc-=STEP;
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
