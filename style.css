@@ -39,7 +39,7 @@
   }
 
 /* ===== Controles de toque (estilo arcade) — aparecem so durante o jogo ===== */
-#mobileBtns{position:fixed;right:16px;bottom:16px;display:none;flex-direction:column;gap:14px;z-index:6;pointer-events:none}
+#mobileBtns{position:fixed;left:0;right:0;bottom:0;height:0;display:none;z-index:6;pointer-events:none}
 body.playing #mobileBtns{display:none}
 @media (pointer:coarse){ body.playing #mobileBtns{display:flex} }
 @media (max-width:900px){ body.playing #mobileBtns{display:flex} }
@@ -54,3 +54,13 @@ body.playing #mobileBtns{display:none}
   text-shadow:2px 2px 0 #b8860b;
 }
 .arrowBtn:active{transform:translate(3px,3px);box-shadow:0 0 0 4px #8a5a00, 2px 2px 0 rgba(0,0,0,.35);background:#ffe066}
+
+/* setas em cantos opostos: abaixar na esquerda, pular na direita */
+#duckBtn.arrowBtn{position:fixed;left:18px;bottom:18px}
+#jumpBtn.arrowBtn{position:fixed;right:18px;bottom:18px}
+.arrowBtn{opacity:.85}
+
+/* esconder por padrao; mostrar so jogando em telas de toque/pequenas */
+#duckBtn.arrowBtn,#jumpBtn.arrowBtn{display:none}
+@media (pointer:coarse){ body.playing #duckBtn.arrowBtn, body.playing #jumpBtn.arrowBtn{display:flex} }
+@media (max-width:900px){ body.playing #duckBtn.arrowBtn, body.playing #jumpBtn.arrowBtn{display:flex} }
