@@ -29,7 +29,7 @@ const duckBtn=document.getElementById('duckBtn');
 // ---- load images ----
 
 
-let W=0,H=0,scale=1,groundY=0;
+let W=0,H=0,scale=1,groundY=0,screenK=1,isMobile=false;
 function resize(){
   W=window.innerWidth;H=window.innerHeight;
   canvas.width=Math.floor(W*devicePixelRatio);
@@ -38,6 +38,10 @@ function resize(){
   ctx.imageSmoothingEnabled=false;
   groundY=Math.round(H*0.80);          // feet line
   scale=Math.max(0.8,Math.min(1.7,W/1100));
+  // ---- adaptacao para telas estreitas (celular) ----
+  // quanto mais estreita a tela, menor o 'screenK' (1 = PC largo, ~0.55 = celular em pe)
+  screenK=Math.max(0.5,Math.min(1,W/900));
+  isMobile=(W<700)||window.matchMedia('(pointer:coarse)').matches;
 }
 window.addEventListener('resize',resize);resize();
 
@@ -116,7 +120,7 @@ function tooClose(x,w,list,pad){
 }
 function spawnObstacleNear(){
   const s=sinsList[Math.floor(Math.random()*sinsList.length)];
-  const sz=Math.round(60*scale);
+  const sz=Math.round((isMobile?52:60)*scale);
   const d=SDIM[s.img];const w=sz, h=sz*d[1]/d[0];
   // posiciona logo a frente do item recem criado
   let refx=W+40;
@@ -135,7 +139,7 @@ function spawnObstacleNear(){
 }
 function spawnObstacle(){
   const s=sinsList[Math.floor(Math.random()*sinsList.length)];
-  const sz=Math.round(60*scale);
+  const sz=Math.round((isMobile?52:60)*scale);
   const d=SDIM[s.img];const w=sz, h=sz*d[1]/d[0];
   let x=W+40;
   const pad=36*scale;
@@ -147,7 +151,7 @@ function spawnObstacle(){
 }
 function spawnItem(){
   const key=faithList[Math.floor(Math.random()*faithList.length)];
-  const sz=Math.round(60*scale);
+  const sz=Math.round((isMobile?52:60)*scale);
   const d=FDIM[key];const w=sz,h=sz*d[1]/d[0];
   let x=W+40;
   const pad=36*scale;
@@ -262,7 +266,11 @@ function drawHUD(){
 function update(){
   if(!running||gameOver)return;
   t++;
-  speed=Math.min(MAX_SPEED, BASE_SPEED + t*ACCEL + score*0.0009);  // tempo + distancia
+  // no celular (tela estreita) a velocidade do mundo eh reduzida para dar tempo de reagir
+  const vBase=BASE_SPEED*(isMobile?0.78:1);
+  const vMax =MAX_SPEED *(isMobile?0.80:1);
+  const vAcc =ACCEL     *(isMobile?0.75:1);
+  speed=Math.min(vMax, vBase + t*vAcc + score*0.0009*(isMobile?0.8:1));
   score+=speed*0.10;
 
   // physics
@@ -285,12 +293,12 @@ function update(){
 
   // spawns scale with speed (closer together as faster, but fair gap)
   nextObs--;nextItem--;
-  if(nextObs<=0){spawnObstacle();const gap=Math.max(38,150-speed*4-score*0.004);nextObs=gap+Math.random()*Math.max(20,55-score*0.002);}
+  if(nextObs<=0){spawnObstacle();const gapMin=isMobile?70:38;const gap=Math.max(gapMin,(isMobile?185:150)-speed*4-score*0.004);nextObs=gap+Math.random()*Math.max(isMobile?35:20,55-score*0.002);}
   if(nextItem<=0){
     spawnItem();
     nextItem=90+Math.random()*80;
     // COMBO ARRISCADO: às vezes um pecado nasce logo perto do item bom
-    if(Math.random()<0.45){
+    if(Math.random()<(isMobile?0.30:0.45)){
       spawnObstacleNear();
       nextObs=Math.max(nextObs,40+Math.random()*30); // evita amontoar logo em seguida
     }
