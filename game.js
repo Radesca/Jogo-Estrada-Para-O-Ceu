@@ -56,7 +56,7 @@ let nextObs=0,nextItem=0;
 const player={x:0,y:0,vy:0,w:0,h:0,state:'run',duckTimer:0,onGround:true,blink:0,run:0,jumps:0,fastFall:false};
 
 // ---- difficulty (Dino-style ramp) ----
-const BASE_SPEED=7.2, MAX_SPEED=30, ACCEL=0.0050;
+const BASE_SPEED=7.2, MAX_SPEED=32, ACCEL=0.0050;
 
 const sinsList=[
   {name:'IRA',img:'ira',need:'jump'},
@@ -118,14 +118,31 @@ if(jumpBtn){
     jumpBtn.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'){e.preventDefault();jump();}});
   }
   if(duckBtn){
-    const dON=e=>{e.preventDefault();duck(true);};
-    const dOFF=e=>{e.preventDefault();duck(false);};
-    duckBtn.addEventListener('touchstart',dON,{passive:false});
-    duckBtn.addEventListener('touchend',dOFF,{passive:false});
-    duckBtn.addEventListener('touchcancel',dOFF,{passive:false});
-    duckBtn.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')dON(e);});
-    duckBtn.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')dOFF(e);});
-    duckBtn.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')dOFF(e);});
+    // ---- CELULAR: rastrear o dedo por touch.identifier ----
+    let duckTouchId=null;
+    duckBtn.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      if(duckTouchId===null && e.changedTouches.length){
+        duckTouchId=e.changedTouches[0].identifier;
+        duck(true);
+      }
+    },{passive:false});
+    function endDuckTouch(e){
+      // so solta se o dedo que terminou for o MESMO que apertou (ignora cancels espurios de outros toques)
+      for(const tc of e.changedTouches){
+        if(tc.identifier===duckTouchId){
+          duckTouchId=null;
+          duck(false);
+          break;
+        }
+      }
+    }
+    duckBtn.addEventListener('touchend',e=>{e.preventDefault();endDuckTouch(e);},{passive:false});
+    duckBtn.addEventListener('touchcancel',e=>{e.preventDefault();endDuckTouch(e);},{passive:false});
+    // ---- DESKTOP (mouse) ----
+    duckBtn.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'){e.preventDefault();duck(true);}});
+    duckBtn.addEventListener('pointerup',e=>{if(e.pointerType==='mouse'){e.preventDefault();duck(false);}});
+    duckBtn.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'){duck(false);}});
   }
 
 function rects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
