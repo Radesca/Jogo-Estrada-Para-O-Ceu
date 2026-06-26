@@ -53,7 +53,7 @@ let obstacles=[],items=[],bgX=0,roadX=0;
 let nextObs=0,nextItem=0;
 
 // player (Dino-like physics tuned by scale)
-const player={x:0,y:0,vy:0,w:0,h:0,state:'run',duckTimer:0,onGround:true,blink:0,run:0};
+const player={x:0,y:0,vy:0,w:0,h:0,state:'run',duckTimer:0,onGround:true,blink:0,run:0,jumps:0,fastFall:false};
 
 // ---- difficulty (Dino-style ramp) ----
 const BASE_SPEED=7.2, MAX_SPEED=18, ACCEL=0.0020;
@@ -75,7 +75,7 @@ function reset(){
   player.w=Math.round(ph*CDIM.run[0]/CDIM.run[1]);
   player.h=ph;
   player.x=Math.round(W*0.14);
-  player.y=groundY-player.h;player.vy=0;player.state='run';player.duckTimer=0;player.duckHeld=false;player.onGround=true;player.blink=0;player.run=0;
+  player.y=groundY-player.h;player.vy=0;player.state='run';player.duckTimer=0;player.duckHeld=false;player.onGround=true;player.blink=0;player.run=0;player.jumps=0;player.fastFall=false;
   nextObs=60;nextItem=90;
   running=true;gameOver=false;document.body.classList.add('playing');
   startScreen.classList.add('hidden');overScreen.classList.add('hidden');
@@ -87,11 +87,27 @@ function startGame(ev){if(ev){ev.preventDefault();ev.stopPropagation();}reset();
 });
 
 // ---- controls (Dino) ----
-function jump(){if(!running||gameOver)return;if(player.onGround){player.vy=-20*scale;player.onGround=false;player.state='jump';}}
-function duck(on){if(!running||gameOver)return;player.duckHeld=on;}
+function jump(){if(!running||gameOver)return;
+  if(player.onGround){player.vy=-17*scale;player.onGround=false;player.state='jump';player.jumps=1;}
+  else if(player.jumps<2){player.vy=-15*scale;player.jumps=2;player.state='jump';}
+}
+function pressDown(){
+  if(!running||gameOver)return;
+  if(player.onGround){
+    player.duckHeld=true;          // deslizar no chao
+  }else{
+    player.fastFall=true;          // cair rapido no ar (impulso que PERSISTE ate tocar o chao)
+    if(player.vy < 12*scale) player.vy = 12*scale;
+  }
+}
+function releaseDown(){
+  player.duckHeld=false;
+  // NAO desliga fastFall aqui: uma vez no ar caindo rapido, continua ate aterrissar.
+}
+function duck(on){ if(on) pressDown(); else releaseDown(); }
 window.addEventListener('keydown',e=>{
-  if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();if(!running){startGame(e);}else jump();}
-  if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code)){e.preventDefault();duck(true);}
+  if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();if(e.repeat)return;if(!running){startGame(e);}else jump();}
+  if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code)){e.preventDefault();if(!e.repeat)duck(true);}
   if(e.code==='Enter'&&!running)startGame(e);
 });
 window.addEventListener('keyup',e=>{if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code))duck(false);});
@@ -246,6 +262,9 @@ function drawSin(o){
     ctx.drawImage(oc,Math.round(o.x),Math.round(o.y));
     ctx.restore();
   }
+  // nome do pecado por cima (com sombra para ler em qualquer fundo)
+  const ns=Math.max(7,Math.round((isMobile?7:9)));
+  text(o.sin.name, o.x+o.w/2, o.y-8, ns, '#ff5252', 'center');
 }
 
 function drawItem(it){
@@ -260,7 +279,7 @@ function drawItem(it){
 function drawHUD(){
   text('PONTOS '+Math.floor(score),22,40,16,'#fff');
   text('RECORDE '+Math.max(hi,Math.floor(score)),22,68,11,'#ffe66d');
-  text('↑ PULA   ↓ DESLIZA',W-22,40,11,'#fff','right');
+  if(!isMobile)text('↑ PULA   ↓ DESLIZA',W-22,40,11,'#fff','right');
 }
 
 function update(){
@@ -274,10 +293,14 @@ function update(){
   score+=speed*0.10;
 
   // physics
-  player.vy+=0.85*scale;player.y+=player.vy;
+  let grav=0.85*scale;
+  if(player.fastFall && !player.onGround){grav=2.6*scale;}
+  player.vy+=grav;
+  if(player.fastFall && player.vy>26*scale)player.vy=26*scale;
+  player.y+=player.vy;
   const floor=groundY-player.h;
   // land detection
-  if(player.y>=floor){player.y=floor;player.vy=0;player.onGround=true;}
+  if(player.y>=floor){player.y=floor;player.vy=0;player.onGround=true;player.jumps=0;player.fastFall=false;}
   else{player.onGround=false;}
   // state: slide only while on ground AND button held; jump while airborne; else run
   if(player.duckHeld && player.onGround){
