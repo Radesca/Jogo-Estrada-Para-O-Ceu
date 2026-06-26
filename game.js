@@ -56,7 +56,7 @@ let nextObs=0,nextItem=0;
 const player={x:0,y:0,vy:0,w:0,h:0,state:'run',duckTimer:0,onGround:true,blink:0,run:0,jumps:0,fastFall:false};
 
 // ---- difficulty (Dino-style ramp) ----
-const BASE_SPEED=7.2, MAX_SPEED=18, ACCEL=0.0020;
+const BASE_SPEED=7.2, MAX_SPEED=30, ACCEL=0.0050;
 
 const sinsList=[
   {name:'IRA',img:'ira',need:'jump'},
@@ -88,15 +88,14 @@ function startGame(ev){if(ev){ev.preventDefault();ev.stopPropagation();}reset();
 
 // ---- controls (Dino) ----
 function jump(){if(!running||gameOver)return;
-  if(player.onGround){player.vy=-17*scale;player.onGround=false;player.state='jump';player.jumps=1;}
+  if(player.onGround){player.vy=-20*scale;player.onGround=false;player.state='jump';player.jumps=1;}
   else if(player.jumps<2){player.vy=-15*scale;player.jumps=2;player.state='jump';}
 }
 function pressDown(){
   if(!running||gameOver)return;
-  if(player.onGround){
-    player.duckHeld=true;          // deslizar no chao
-  }else{
-    player.fastFall=true;          // cair rapido no ar (impulso que PERSISTE ate tocar o chao)
+  player.duckHeld=true;            // marca segurado (serve pra deslizar no chao E ao pousar)
+  if(!player.onGround){
+    player.fastFall=true;          // no ar: cair rapido (persiste ate aterrissar)
     if(player.vy < 12*scale) player.vy = 12*scale;
   }
 }
@@ -114,8 +113,9 @@ window.addEventListener('keyup',e=>{if(['ArrowDown','ShiftLeft','ShiftRight','Ke
 canvas.addEventListener('pointerdown',e=>{if(!running)return;if(e.clientX<W/2)duck(true);else jump();});
 canvas.addEventListener('pointerup',()=>duck(false));
 if(jumpBtn){
+    // SO touchstart no celular OU pointerdown no desktop (nunca os dois juntos)
     jumpBtn.addEventListener('touchstart',e=>{e.preventDefault();jump();},{passive:false});
-    jumpBtn.addEventListener('pointerdown',e=>{e.preventDefault();jump();});
+    jumpBtn.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'){e.preventDefault();jump();}});
   }
   if(duckBtn){
     const dON=e=>{e.preventDefault();duck(true);};
@@ -123,9 +123,9 @@ if(jumpBtn){
     duckBtn.addEventListener('touchstart',dON,{passive:false});
     duckBtn.addEventListener('touchend',dOFF,{passive:false});
     duckBtn.addEventListener('touchcancel',dOFF,{passive:false});
-    duckBtn.addEventListener('pointerdown',dON);
-    duckBtn.addEventListener('pointerup',dOFF);
-    duckBtn.addEventListener('pointerleave',dOFF);
+    duckBtn.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')dON(e);});
+    duckBtn.addEventListener('pointerup',e=>{if(e.pointerType==='mouse')dOFF(e);});
+    duckBtn.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')dOFF(e);});
   }
 
 function rects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
@@ -316,12 +316,12 @@ function update(){
 
   // spawns scale with speed (closer together as faster, but fair gap)
   nextObs--;nextItem--;
-  if(nextObs<=0){spawnObstacle();const gapMin=isMobile?70:38;const gap=Math.max(gapMin,(isMobile?185:150)-speed*4-score*0.004);nextObs=gap+Math.random()*Math.max(isMobile?35:20,55-score*0.002);}
+  if(nextObs<=0){spawnObstacle();const gapMin=isMobile?58:34;const gap=Math.max(gapMin,(isMobile?150:115)-speed*4-score*0.006);nextObs=gap+Math.random()*Math.max(isMobile?28:16,45-score*0.002);}
   if(nextItem<=0){
     spawnItem();
-    nextItem=90+Math.random()*80;
+    nextItem=58+Math.random()*55;
     // COMBO ARRISCADO: às vezes um pecado nasce logo perto do item bom
-    if(Math.random()<(isMobile?0.30:0.45)){
+    if(Math.random()<(isMobile?0.45:0.62)){
       spawnObstacleNear();
       nextObs=Math.max(nextObs,40+Math.random()*30); // evita amontoar logo em seguida
     }
