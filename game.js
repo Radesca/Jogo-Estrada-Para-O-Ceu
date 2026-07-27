@@ -25,6 +25,89 @@ const playBtn=document.getElementById('play');
 const retryBtn=document.getElementById('retry');
 const jumpBtn=document.getElementById('jumpBtn');
 const duckBtn=document.getElementById('duckBtn');
+const boardScreen=document.getElementById('board');
+const boardList=document.getElementById('boardList');
+const boardBtnStart=document.getElementById('boardBtnStart');
+const viewBoardBtn=document.getElementById('viewBoardBtn');
+const boardBack=document.getElementById('boardBack');
+const rulesScreen=document.getElementById('rules');
+const rulesBtnStart=document.getElementById('rulesBtnStart');
+const rulesBack=document.getElementById('rulesBack');
+const rulesPlayBtn=document.getElementById('rulesPlayBtn');
+const playerNameInput=document.getElementById('playerName');
+const playerInstaInput=document.getElementById('playerInsta');
+const submitScoreBtn=document.getElementById('submitScoreBtn');
+const submitMsg=document.getElementById('submitMsg');
+
+// ===== PLACAR ONLINE (Supabase) =====
+// 1) Crie um projeto gratis em supabase.com
+// 2) Rode o SQL de criacao da tabela "scores" (ver instrucoes que te passei)
+// 3) Cole aqui a URL do projeto e a "anon public key" (em Project Settings > API)
+const SUPABASE_URL_RAW = 'https://rhjfbhordjshlhoyhhbf.supabase.co';       // ex: https://xxxxx.supabase.co
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoamZiaG9yZGpzaGxob3loaGJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjAxMjMsImV4cCI6MjEwMDczNjEyM30.U_vh_SGKZNOmS5FUg4T1_x4KFOlS63dMp0xCaXsK1cY';
+// normaliza: remove barra final e qualquer /rest/v1 que tenha colado junto, pra nunca duplicar o caminho
+const SUPABASE_URL = SUPABASE_URL_RAW.trim().replace(/\/rest\/v1\/?.*$/,'').replace(/\/+$/,'');
+const SB_READY = !SUPABASE_URL.startsWith('COLE_AQUI') && !SUPABASE_ANON_KEY.startsWith('COLE_AQUI');
+
+async function submitScore(name, insta, scoreVal){
+  if(!SB_READY) return {ok:false, msg:'Placar ainda não configurado (falta colar a URL/chave do Supabase no game.js).'};
+  try{
+    const res = await fetch(SUPABASE_URL+'/rest/v1/scores', {
+      method:'POST',
+      headers:{
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer '+SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ name: name.slice(0,18), instagram: insta.slice(0,24), score: Math.floor(scoreVal) })
+    });
+    if(!res.ok){
+      let detail='';
+      try{ const j=await res.json(); detail=j.message||j.hint||j.error||''; }catch(e){}
+      console.error('Supabase insert falhou', res.status, detail);
+      return {ok:false, msg:'Erro '+res.status+(detail?': '+detail:'')+'. Veja o console (F12).'};
+    }
+    return {ok:true};
+  }catch(e){ console.error('Erro de rede ao enviar placar', e); return {ok:false, msg:'Sem conexão ou bloqueio de rede. Veja o console (F12).'}; }
+}
+
+async function loadLeaderboard(){
+  if(!boardList) return;
+  boardList.innerHTML='<li class="boardLoading">Carregando...</li>';
+  if(!SB_READY){ boardList.innerHTML='<li class="boardEmpty">Placar ainda não configurado.</li>'; return; }
+  try{
+    const url=SUPABASE_URL+'/rest/v1/scores?select=name,instagram,score&order=score.desc&limit=10';
+    const res=await fetch(url,{headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY}});
+    const rows=await res.json();
+    if(!Array.isArray(rows)||!rows.length){ boardList.innerHTML='<li class="boardEmpty">Ninguém pontuou ainda. Seja o primeiro!</li>'; return; }
+    boardList.innerHTML=rows.map((r,i)=>{
+      const medal=['🥇','🥈','🥉'][i]||(i+1)+'.';
+      const insta=r.instagram? ('@'+String(r.instagram).replace(/^@/,'')) : '';
+      return '<li><span class="boardRank">'+medal+'</span><span class="boardName">'+escapeHtml(r.name||'Anônimo')+'</span><span class="boardInsta">'+escapeHtml(insta)+'</span><span class="boardScore">'+Math.floor(r.score)+'</span></li>';
+    }).join('');
+  }catch(e){ boardList.innerHTML='<li class="boardEmpty">Erro ao carregar. Tenta de novo.</li>'; }
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+// ===== SONS (sintetizados, sem arquivos externos) =====
+let actx=null;
+function getActx(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function beep(freq,dur,type,vol,delay){
+  const ac=getActx(); if(!ac) return;
+  const t0=ac.currentTime+(delay||0);
+  const osc=ac.createOscillator(), gain=ac.createGain();
+  osc.type=type||'square'; osc.frequency.setValueAtTime(freq,t0);
+  gain.gain.setValueAtTime(0,t0);
+  gain.gain.linearRampToValueAtTime(vol||0.12,t0+0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+function sndJump(){ beep(520,0.12,'square',0.10); beep(760,0.10,'square',0.08,0.05); }
+function sndCollect(comboN){ const base=740+Math.min(comboN,8)*60; beep(base,0.09,'square',0.10); beep(base*1.5,0.10,'triangle',0.08,0.04); }
+function sndHit(){ beep(160,0.28,'sawtooth',0.14); beep(90,0.32,'sawtooth',0.12,0.05); }
+function sndOver(){ beep(300,0.18,'triangle',0.10); beep(220,0.22,'triangle',0.10,0.15); beep(160,0.3,'triangle',0.10,0.32); }
 
 // ---- load images ----
 
@@ -51,6 +134,29 @@ function setHi(v){try{localStorage.setItem('carlo_hi',v)}catch(e){}}
 let running=false,gameOver=false,t=0,speed=0,score=0,hi=getHi();
 let obstacles=[],items=[],bgX=0,roadX=0;
 let nextObs=0,nextItem=0;
+let combo=0,comboBest=0,comboPopT=0,comboPopN=0;
+let particles=[];
+let hitFlash=0;
+let scoreSubmitted=false;
+
+function spawnParticles(x,y){
+  for(let i=0;i<10;i++){
+    const a=Math.random()*Math.PI*2, sp=(1.5+Math.random()*3)*scale;
+    particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1.5*scale,life:26+Math.random()*10,maxLife:36,size:(2+Math.random()*2)*scale});
+  }
+}
+function updateParticles(){
+  for(const p of particles){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.12*scale; p.life--; }
+  particles=particles.filter(p=>p.life>0);
+}
+function drawParticles(){
+  for(const p of particles){
+    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+    ctx.fillStyle='#ffe066';
+    ctx.fillRect(Math.round(p.x-p.size/2),Math.round(p.y-p.size/2),Math.round(p.size),Math.round(p.size));
+  }
+  ctx.globalAlpha=1;
+}
 
 // player (Dino-like physics tuned by scale)
 const player={x:0,y:0,vy:0,w:0,h:0,state:'run',duckTimer:0,onGround:true,blink:0,run:0,jumps:0,fastFall:false};
@@ -71,6 +177,14 @@ const faithList=['rosary','book','host','cross','dove','laptop'];
 
 function reset(){
   t=0;speed=BASE_SPEED;score=0;obstacles=[];items=[];bgX=0;roadX=0;
+  combo=0;comboBest=0;comboPopT=0;particles=[];hitFlash=0;scoreSubmitted=false;
+  if(boardScreen)boardScreen.classList.add('hidden');
+  if(rulesScreen)rulesScreen.classList.add('hidden');
+  if(playerNameInput)playerNameInput.value='';
+  if(playerInstaInput)playerInstaInput.value='';
+  if(submitMsg){submitMsg.textContent='';submitMsg.className='submitMsg';}
+  if(submitScoreBtn){submitScoreBtn.disabled=false;submitScoreBtn.textContent='ENVIAR PONTUAÇÃO';}
+  getActx();
   const ph=Math.round(120*scale);
   player.w=Math.round(ph*CDIM.run[0]/CDIM.run[1]);
   player.h=ph;
@@ -81,15 +195,17 @@ function reset(){
   startScreen.classList.add('hidden');overScreen.classList.add('hidden');
 }
 function startGame(ev){if(ev){ev.preventDefault();ev.stopPropagation();}reset();}
+function showRules(ev){if(ev){ev.preventDefault();ev.stopPropagation();}startScreen.classList.add('hidden');if(rulesScreen)rulesScreen.classList.remove('hidden');}
 ['click','pointerdown','touchstart'].forEach(evt=>{
-  playBtn.addEventListener(evt,startGame,{passive:false});
+  playBtn.addEventListener(evt,showRules,{passive:false});
+  if(rulesPlayBtn) rulesPlayBtn.addEventListener(evt,startGame,{passive:false});
   retryBtn.addEventListener(evt,function(e){if(e){e.preventDefault();e.stopPropagation();}goToMenu();},{passive:false});
 });
 
 // ---- controls (Dino) ----
 function jump(){if(!running||gameOver)return;
-  if(player.onGround){player.vy=-20*scale;player.onGround=false;player.state='jump';player.jumps=1;}
-  else if(player.jumps<2){player.vy=-15*scale;player.jumps=2;player.state='jump';}
+  if(player.onGround){player.vy=-20*scale;player.onGround=false;player.state='jump';player.jumps=1;sndJump();}
+  else if(player.jumps<2){player.vy=-15*scale;player.jumps=2;player.state='jump';sndJump();}
 }
 function pressDown(){
   if(!running||gameOver)return;
@@ -104,12 +220,22 @@ function releaseDown(){
   // NAO desliga fastFall aqui: uma vez no ar caindo rapido, continua ate aterrissar.
 }
 function duck(on){ if(on) pressDown(); else releaseDown(); }
+function onStartKey(e){
+  if(running)return;
+  const rulesOpen = rulesScreen && !rulesScreen.classList.contains('hidden');
+  if(rulesOpen) startGame(e); else showRules(e);
+}
+function isTypingInField(e){
+  const tag=(e.target&&e.target.tagName)||'';
+  return tag==='INPUT'||tag==='TEXTAREA'||(e.target&&e.target.isContentEditable);
+}
 window.addEventListener('keydown',e=>{
-  if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();if(e.repeat)return;if(!running){startGame(e);}else jump();}
+  if(isTypingInField(e))return;
+  if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();if(e.repeat)return;if(!running){onStartKey(e);}else jump();}
   if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code)){e.preventDefault();if(!e.repeat)duck(true);}
-  if(e.code==='Enter'&&!running)startGame(e);
+  if(e.code==='Enter'&&!running)onStartKey(e);
 });
-window.addEventListener('keyup',e=>{if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code))duck(false);});
+window.addEventListener('keyup',e=>{if(isTypingInField(e))return;if(['ArrowDown','ShiftLeft','ShiftRight','KeyS'].includes(e.code))duck(false);});
 canvas.addEventListener('pointerdown',e=>{if(!running)return;if(e.clientX<W/2)duck(true);else jump();});
 canvas.addEventListener('pointerup',()=>duck(false));
 if(jumpBtn){
@@ -297,6 +423,12 @@ function drawHUD(){
   text('PONTOS '+Math.floor(score),22,40,16,'#fff');
   text('RECORDE '+Math.max(hi,Math.floor(score)),22,68,11,'#ffe66d');
   if(!isMobile)text('↑ PULA   ↓ DESLIZA',W-22,40,11,'#fff','right');
+  if(comboPopT>0 && comboPopN>1){
+    const a=Math.min(1,comboPopT/12);
+    ctx.save();ctx.globalAlpha=a;
+    text('COMBO x'+comboPopN,W/2,90,Math.round((isMobile?12:16)+Math.min(comboPopN,6)),'#ffe66d','center');
+    ctx.restore();
+  }
 }
 
 function update(){
@@ -347,30 +479,75 @@ function update(){
   obstacles.forEach(o=>o.x-=speed);
   items.forEach(i=>i.x-=speed);
   obstacles=obstacles.filter(o=>o.x+o.w>-60);
-  items=items.filter(i=>i.x+i.w>-60&&!i.got);
+  // item saiu da tela sem ser coletado: quebra o combo
+  items=items.filter(i=>{
+    const alive=i.x+i.w>-60&&!i.got;
+    if(!alive && !i.got && i.x+i.w<=-60) combo=0;
+    return alive;
+  });
+
+  updateParticles();
+  if(comboPopT>0)comboPopT--;
 
   // player collision box (use current duck/normal size, with forgiveness margin)
   const m=8*scale;
   const pb={x:player.x+m, y:(player.state==='slide'?groundY-player.curH:player.y)+m, w:player.curW-2*m, h:player.curH-2*m};
   for(const o of obstacles){
     const ob={x:o.x+o.w*0.18,y:o.y+o.h*0.16,w:o.w*0.64,h:o.h*0.7};
-    if(rects(pb,ob)){player.blink=45;endGame();return;}
+    if(rects(pb,ob)){player.blink=45;hitFlash=8;sndHit();endGame();return;}
   }
   for(const it of items){
     const ib={x:it.x,y:it.y,w:it.w,h:it.h};
-    if(rects(pb,ib)){it.got=true;score+=100;}
+    if(rects(pb,ib)){
+      it.got=true;
+      combo++;comboBest=Math.max(comboBest,combo);
+      const bonus=100+Math.min(combo-1,10)*15;
+      score+=bonus;
+      sndCollect(combo);
+      spawnParticles(it.x+it.w/2,it.y+it.h/2);
+      comboPopT=40;comboPopN=combo;
+    }
   }
 }
 
 function endGame(){gameOver=true;running=false;document.body.classList.remove('playing');hi=Math.max(hi,Math.floor(score));setHi(hi);
   finalScore.textContent='PONTOS: '+Math.floor(score);
   overScreen.classList.remove('hidden');
+  sndOver();
 }
 function goToMenu(){
   document.body.classList.remove('playing');
   overScreen.classList.add('hidden');
+  if(boardScreen)boardScreen.classList.add('hidden');
+  if(rulesScreen)rulesScreen.classList.add('hidden');
   startScreen.classList.remove('hidden');
 }
+
+// ===== envio de pontuacao / placar =====
+if(submitScoreBtn) submitScoreBtn.addEventListener('click', async ()=>{
+  if(scoreSubmitted) return;
+  const name=playerNameInput.value.trim();
+  const insta=playerInstaInput.value.trim();
+  if(!name){ submitMsg.textContent='Digite seu nome pra entrar no placar.'; submitMsg.className='submitMsg err'; return; }
+  submitScoreBtn.disabled=true; submitScoreBtn.textContent='ENVIANDO...';
+  const r=await submitScore(name,insta,score);
+  if(r.ok){
+    scoreSubmitted=true;
+    submitMsg.textContent='Pontuação enviada! Boa sorte na promoção 🐑';
+    submitMsg.className='submitMsg';
+    submitScoreBtn.textContent='ENVIADO ✔';
+  }else{
+    submitScoreBtn.disabled=false; submitScoreBtn.textContent='ENVIAR PONTUAÇÃO';
+    submitMsg.textContent=r.msg||'Erro ao enviar.'; submitMsg.className='submitMsg err';
+  }
+});
+let boardOrigin='start';
+function openBoard(origin){ boardOrigin=origin; overScreen.classList.add('hidden'); startScreen.classList.add('hidden'); if(boardScreen)boardScreen.classList.remove('hidden'); loadLeaderboard(); }
+if(viewBoardBtn) viewBoardBtn.addEventListener('click', ()=>openBoard('over'));
+if(boardBtnStart) boardBtnStart.addEventListener('click', ()=>openBoard('start'));
+if(boardBack) boardBack.addEventListener('click', ()=>{ boardScreen.classList.add('hidden'); if(boardOrigin==='over') overScreen.classList.remove('hidden'); else startScreen.classList.remove('hidden'); });
+if(rulesBtnStart) rulesBtnStart.addEventListener('click', showRules);
+if(rulesBack) rulesBack.addEventListener('click', ()=>{ rulesScreen.classList.add('hidden'); startScreen.classList.remove('hidden'); });
 
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -378,7 +555,13 @@ function draw(){
   items.forEach(drawItem);
   obstacles.forEach(drawSin);
   drawCarlo();
+  drawParticles();
   drawHUD();
+  if(hitFlash>0){
+    ctx.fillStyle='rgba(255,40,40,'+(hitFlash/8*0.35)+')';
+    ctx.fillRect(0,0,W,H);
+    hitFlash--;
+  }
 }
 // ===== LOOP COM PASSO FIXO (60 updates/seg) — independente da taxa do monitor =====
 let _lastTime=0, _acc=0;
