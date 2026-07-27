@@ -64,3 +64,63 @@ body.playing #mobileBtns{display:none}
 #duckBtn.arrowBtn,#jumpBtn.arrowBtn{display:none}
 @media (pointer:coarse){ body.playing #duckBtn.arrowBtn, body.playing #jumpBtn.arrowBtn{display:flex} }
 @media (max-width:900px){ body.playing #duckBtn.arrowBtn, body.playing #jumpBtn.arrowBtn{display:flex} }
+
+/* ===== Promocao CORDEIRO ===== */
+.promoTag{position:absolute;left:1%;top:25%;right:26%;z-index:3;display:flex;flex-direction:column;gap:8px;
+  background:rgba(15,18,45,.90);border:4px solid #ffd447;padding:16px 20px;max-width:min(500px,87vw);
+  box-shadow:6px 6px 0 rgba(0,0,0,.4), 0 0 24px rgba(255,210,70,.35);
+  animation:promoPulse 1.6s ease-in-out infinite}
+.promoTitle{display:block;font-size:clamp(13px,2.6vw,20px);color:#ffe66d;line-height:1.7;text-shadow:3px 3px 0 #442700}
+.promoSub{display:block;font-size:clamp(9px,1.7vw,13px);color:#dff0ff;line-height:1.9;margin-top:2px}
+@keyframes promoPulse{0%,100%{box-shadow:6px 6px 0 rgba(0,0,0,.4),0 0 18px rgba(255,210,70,.30)}50%{box-shadow:6px 6px 0 rgba(0,0,0,.4),0 0 32px rgba(255,210,70,.55)}}
+@media(max-width:800px){.promoTag{max-width:92vw;padding:12px 14px;left:3%;top:3%}}
+
+.boardCorner{position:absolute;left:4%;bottom:6%;z-index:3;margin:0;font-size:14px;padding:14px 26px;
+  background:#171b44;color:#ffe66d;border:4px solid #ffd447;box-shadow:6px 6px 0 rgba(0,0,0,.4);cursor:pointer;
+  font-family:'Press Start 2P'}
+.boardCorner:hover{background:#232964}
+.boardCorner:active{transform:translate(4px,4px);box-shadow:2px 2px 0 rgba(0,0,0,.4)}
+@media(max-width:800px){.boardCorner{font-size:10px;padding:12px 20px;left:5%;bottom:18%}}
+
+/* ===== Formulario de pontuacao (tela de fim de jogo) ===== */
+.scoreForm{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px}
+.pxInput{width:min(320px,80vw);font-family:'Press Start 2P';font-size:11px;padding:12px 14px;
+  background:#0f1230;color:#ffe66d;border:3px solid #ffd447;text-align:center;outline:none}
+.pxInput::placeholder{color:#6d7399}
+.pxInput:focus{background:#181d47;border-color:#fff}
+.submitMsg{font-size:9px;min-height:18px;color:#8ef58e;margin:4px 0 0}
+.submitMsg.err{color:#ff8080}
+#submitScoreBtn{font-size:11px;padding:12px 22px}
+#submitScoreBtn:disabled{opacity:.5;cursor:default}
+.overBtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.overBtns .btn{margin-top:0;font-size:11px;padding:12px 20px}
+
+/* ===== Tela de placar ===== */
+.boardHint{font-size:8px;color:#ffe66d;margin-top:-4px}
+.boardList{list-style:none;margin:18px 0;max-height:46vh;overflow-y:auto;text-align:left}
+.boardList li{display:flex;align-items:center;gap:10px;font-size:10px;padding:10px 12px;
+  border-bottom:2px solid rgba(255,255,255,.1)}
+.boardList li:nth-child(1){color:#ffe66d}
+.boardList li:nth-child(2){color:#dfe6ff}
+.boardList li:nth-child(3){color:#e3b27a}
+.boardRank{width:26px;flex:0 0 auto}
+.boardName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.boardInsta{flex:0 0 auto;font-size:8px;color:#8ea0ff;overflow:hidden;text-overflow:ellipsis;max-width:110px;white-space:nowrap}
+.boardScore{flex:0 0 auto;color:#fff}
+.boardLoading,.boardEmpty{font-size:9px;color:#dff0ff;text-align:center;padding:14px 0}
+@media(max-width:800px){.boardList li{font-size:8px;padding:8px}.boardInsta{max-width:70px}}
+
+/* ===== Combo HUD ===== */
+.comboPop{position:fixed;pointer-events:none;z-index:4}
+
+/* ===== Tela de regras ===== */
+.rulesList{list-style:none;text-align:left;margin:18px auto;max-width:560px}
+.rulesList li{display:flex;gap:14px;align-items:flex-start;font-size:10px;line-height:1.9;color:#dff0ff;padding:10px 4px;border-bottom:2px solid rgba(255,255,255,.08)}
+.rulesIcon{font-size:18px;flex:0 0 auto}
+.rulesLabel{color:#ffe66d}
+.rulesBtn{position:absolute;right:4%;top:5%;z-index:3;margin:0;font-size:12px;padding:12px 20px;
+  background:#171b44;color:#ffe66d;border:4px solid #ffd447;box-shadow:6px 6px 0 rgba(0,0,0,.4);cursor:pointer;
+  font-family:'Press Start 2P'}
+.rulesBtn:hover{background:#232964}
+.rulesBtn:active{transform:translate(4px,4px);box-shadow:2px 2px 0 rgba(0,0,0,.4)}
+@media(max-width:800px){.rulesBtn{font-size:9px;padding:10px 14px;right:3%;top:auto;bottom:32%}.rulesList li{font-size:9px}}

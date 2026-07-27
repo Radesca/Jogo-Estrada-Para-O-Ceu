@@ -11,15 +11,56 @@
 <canvas id="game"></canvas>
 
 <div id="start" class="screen cover">
+    <div class="promoTag">
+      <span class="promoTitle">PROMOÇÃO CORDEIRO !</span>
+      <span class="promoSub">OS 3 MELHORES DO PLACAR GANHAM PRÊMIO! <br> VALIDO ATE 30/08!</span>
+    </div>
+    <button id="rulesBtnStart" class="btn rulesBtn">REGRAS &#10068;</button>
+    <button id="boardBtnStart" class="btn boardCorner">PLACAR &#127942;</button>
     <button id="play" class="btn playCorner">JOGAR &#9654;</button>
   </div>
+
+  <div id="rules" class="screen hidden">
+  <div class="panel">
+    <h1>COMO JOGAR</h1>
+    <ol class="rulesList">
+      <li><span class="rulesIcon">&#9995;</span><span><span class="rulesLabel">PULE</span> os pecados IRA, GANÂNCIA, VAIDADE, PREGUIÇA e GULA (barra de espaço, seta pra cima ou botão direito no celular).</span></li>
+      <li><span class="rulesIcon">&#128587;</span><span><span class="rulesLabel">ABAIXE</span> pra passar por baixo de INVEJA e LUXÚRIA (seta pra baixo ou botão esquerdo no celular).</span></li>
+      <li><span class="rulesIcon">&#10024;</span><span><span class="rulesLabel">COLETE</span> os itens de fé (terço, cruz, hóstia, pomba...) para ganhar pontos.</span></li>
+      <li><span class="rulesIcon">&#128293;</span><span><span class="rulesLabel">COMBO:</span> pegue itens de fé seguidos, sem deixar nenhum passar, pra multiplicar seus pontos.</span></li>
+      <li><span class="rulesIcon">&#127942;</span><span><span class="rulesLabel">PROMOÇÃO:</span> envie sua pontuação no fim da partida com nome e Instagram. Os 3 melhores do placar ganham prêmio da CORDEIRO Vestuário Católico!</span></li>
+    </ol>
+    <div class="overBtns">
+      <button id="rulesBack" class="btn">VOLTAR</button>
+      <button id="rulesPlayBtn" class="btn">JOGAR &#9654;</button>
+    </div>
+  </div>
+</div>
 
   <div id="over" class="screen hidden">
   <div class="panel">
     <h1>FIM DA JORNADA</h1>
     <h2 id="finalScore">PONTOS: 0</h2>
     <p id="finalMsg">"Todos nascem como originais, mas muitos morrem como cópias." &mdash; Bem-aventurado Carlo Acutis</p>
-    <button id="retry" class="btn">VOLTAR AO MENU</button>
+    <div class="scoreForm">
+      <input id="playerName" class="pxInput" type="text" maxlength="18" placeholder="SEU NOME" autocomplete="off">
+      <input id="playerInsta" class="pxInput" type="text" maxlength="24" placeholder="@SEU_INSTAGRAM" autocomplete="off">
+      <button id="submitScoreBtn" class="btn">ENVIAR PONTUAÇÃO</button>
+      <p id="submitMsg" class="submitMsg"></p>
+    </div>
+    <div class="overBtns">
+      <button id="viewBoardBtn" class="btn">VER PLACAR</button>
+      <button id="retry" class="btn">VOLTAR AO MENU</button>
+    </div>
+  </div>
+</div>
+
+<div id="board" class="screen hidden">
+  <div class="panel">
+    <h1>PLACAR &mdash; TOP 10</h1>
+    <p class="boardHint">Promoção CORDEIRO Vestuário Católico: os 3 primeiros ganham prêmio!</p>
+    <ol id="boardList" class="boardList"><li class="boardLoading">Carregando...</li></ol>
+    <button id="boardBack" class="btn">VOLTAR</button>
   </div>
 </div>
 
