@@ -43,8 +43,8 @@ const submitMsg=document.getElementById('submitMsg');
 // 1) Crie um projeto gratis em supabase.com
 // 2) Rode o SQL de criacao da tabela "scores" (ver instrucoes que te passei)
 // 3) Cole aqui a URL do projeto e a "anon public key" (em Project Settings > API)
-const SUPABASE_URL_RAW = 'https://rhjfbhordjshlhoyhhbf.supabase.co';       // ex: https://xxxxx.supabase.co
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJoamZiaG9yZGpzaGxob3loaGJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjAxMjMsImV4cCI6MjEwMDczNjEyM30.U_vh_SGKZNOmS5FUg4T1_x4KFOlS63dMp0xCaXsK1cY';
+const SUPABASE_URL_RAW = 'COLE_AQUI';       // ex: https://xxxxx.supabase.co (não commite a URL/chave reais)
+const SUPABASE_ANON_KEY = 'COLE_AQUI';      // anon public key (Project Settings > API); mantenha só em cópia local
 // normaliza: remove barra final e qualquer /rest/v1 que tenha colado junto, pra nunca duplicar o caminho
 const SUPABASE_URL = SUPABASE_URL_RAW.trim().replace(/\/rest\/v1\/?.*$/,'').replace(/\/+$/,'');
 const SB_READY = !SUPABASE_URL.startsWith('COLE_AQUI') && !SUPABASE_ANON_KEY.startsWith('COLE_AQUI');
